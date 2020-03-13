@@ -6,15 +6,11 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 
-PERCENT_BEER_LEFT = "v48"
-POURING = "v49"
-BEER_LEFT = "v51"
-TEMPERATURE = "v56"
-UNIT_TYPE = "v71"
-
-KEG_PINS = [PERCENT_BEER_LEFT, POURING, BEER_LEFT, TEMPERATURE, UNIT_TYPE]
 URL = "http://plaato.blynk.cc/{auth_token}/get"
 
+# Temperature units
+TEMP_CELSIUS = "°C"
+TEMP_FAHRENHEIT = "°F"
 
 class PlaatoType(Enum):
     Airlock = 1
@@ -48,7 +44,13 @@ class PlaatoKeg:
     @property
     def temperature(self):
         if self.__temperature is not None:
-            return round(self.__temperature, 2)
+            return round(self.__temperature, 1)
+
+    @property
+    def temperature_unit(self):
+        if self.__unit_type is "1":
+            return TEMP_CELSIUS
+        return TEMP_FAHRENHEIT
 
     @property
     def beer_left(self):
@@ -90,10 +92,18 @@ class PlaatoKeg:
 
 @dataclass
 class PlaatoAirlock:
-    """Class for holding a Plaato Keg"""
+    """Class for holding a Plaato Airlock"""
 
     def __init__(self, attrs):
         self.bmp = attrs[self.Pins.BPM] or None
+        self.temperature_unit = attrs[self.Pins.TEMPERATURE_UNIT]
+        self.volume_unit = attrs[self.Pins.VOLUME_UNIT]
+        self.bubbles = attrs[self.Pins.BUBBLES]
+        self.batch_volume = attrs[self.Pins.BATCH_VOLUME]
+        self.__sg = attrs[self.Pins.ABV] or None
+        self.__og = attrs[self.Pins.ABV] or None
+        self.__abv = attrs[self.Pins.ABV] or None
+        self.__co2_volume = attrs[self.Pins.ABV] or None
         self.__temperature = float(attrs[self.Pins.TEMPERATURE]) or None
 
     def __repr__(self):
@@ -102,11 +112,39 @@ class PlaatoAirlock:
     @property
     def temperature(self):
         if self.__temperature is not None:
-            return round(self.__temperature, 2)
+            return round(self.__temperature, 1)
+
+    @property
+    def abv(self):
+        if self.__abv is not None:
+            return round(self.__abv, 2)
+
+    @property
+    def sg(self):
+        if self.__sg is not None:
+            return round(self.__sg, 2)
+
+    @property
+    def og(self):
+        if self.__og is not None:
+            return round(self.__og, 2)
+
+    @property
+    def co2_volume(self):
+        if self.__co2_volume is not None:
+            return round(self.__co2_volume, 2)
 
     class Pins(Enum):
         BPM = "v102"
         TEMPERATURE = "v103"
+        BATCH_VOLUME = "v104"
+        OG = "v105"
+        SG = "v106"
+        ABV = "107"
+        TEMPERATURE_UNIT = "v108"
+        VOLUME_UNIT = "v109"
+        BUBBLES = "v110"
+        CO2_VOLUME = "v119"
 
 
 async def get_keg_data(session: ClientSession, auth_token: str):
