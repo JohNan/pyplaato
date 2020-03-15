@@ -11,7 +11,7 @@ setuptools.setup(
     description="Asynchronous Python client for getting Plaato Airlock and Keg data",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
+    url="https://github.com/JohNan/pyplaato",
     packages=setuptools.find_packages(),
     classifiers=[
         "Framework :: AsyncIO",

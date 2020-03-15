@@ -25,18 +25,19 @@ async def go(args):
 def main():
     parser = argparse.ArgumentParser()
     required_argument = parser.add_argument_group('required arguments')
+    optional_argument = parser.add_argument_group('optional arguments')
     required_argument.add_argument('-t', dest='auth_token',
                                    help='Auth token received from Plaato',
                                    required=True)
     required_argument.add_argument('-d',
                                    action='store',
                                    dest='device',
-                                   choices=['keg','airlock', 'both'],
+                                   choices=['keg', 'airlock', 'both'],
                                    required=True)
-    required_argument.add_argument('-u', dest='url',
-                                   help='Optional mock url')
-    required_argument.add_argument('-k', dest='api_key',
-                                   help='Optional header key for mock url')
+    optional_argument.add_argument('-u', dest='url',
+                                   help='Mock url')
+    optional_argument.add_argument('-k', dest='api_key',
+                                   help='Header key for mock url')
 
     args = parser.parse_args()
 
