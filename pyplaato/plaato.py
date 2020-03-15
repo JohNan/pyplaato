@@ -1,7 +1,8 @@
 """Fetch data from Plaato Airlock and Keg"""
 from datetime import datetime
+from json import JSONDecodeError
 
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientResponseError
 from dataclasses import dataclass
 from enum import Enum
 import logging
@@ -11,6 +12,7 @@ URL = "http://plaato.blynk.cc/{auth_token}/get"
 # Temperature units
 TEMP_CELSIUS = "°C"
 TEMP_FAHRENHEIT = "°F"
+
 
 class PlaatoType(Enum):
     Airlock = 1
@@ -34,6 +36,12 @@ class PlaatoKeg:
         self.__last_pour = attrs[self.Pins.LAST_POUR] or None
         self.__date = attrs[self.Pins.DATE] or None
 
+    def __repr__(self):
+        return f"{self.__class__.__name__} -> " \
+               f"Bear Left: {self.beer_left}, " \
+               f"Temp: {self.temperature}, " \
+               f"Pouring: {self.pouring}"
+
     @property
     def date(self):
         if self.__date is not None:
@@ -44,7 +52,7 @@ class PlaatoKeg:
     @property
     def temperature(self):
         if self.__temperature is not None:
-            return round(self.__temperature, 1)
+            return round(float(self.__temperature), 1)
 
     @property
     def temperature_unit(self):
@@ -55,7 +63,7 @@ class PlaatoKeg:
     @property
     def beer_left(self):
         if self.__beer_left is not None:
-            return round(self.__beer_left, 2)
+            return round(float(self.__beer_left), 2)
 
     @property
     def percent_beer_left(self):
@@ -65,16 +73,16 @@ class PlaatoKeg:
     @property
     def last_pour(self):
         if self.__last_pour is not None:
-            return round(self.__last_pour, 2)
+            return round(float(self.__last_pour), 2)
 
     @property
     def pouring(self):
         """
-        1 = Pouring
+        0 = Pouring
         255 = Not Pouring
         :return: True if 1 = Pouring else False
         """
-        return self.__pouring is "1"
+        return self.__pouring is "0"
 
     class Pins(Enum):
         BEER_NAME = "v64"
@@ -104,35 +112,35 @@ class PlaatoAirlock:
         self.__og = attrs[self.Pins.ABV] or None
         self.__abv = attrs[self.Pins.ABV] or None
         self.__co2_volume = attrs[self.Pins.ABV] or None
-        self.__temperature = float(attrs[self.Pins.TEMPERATURE]) or None
+        self.__temperature = attrs[self.Pins.TEMPERATURE] or None
 
     def __repr__(self):
-        return f"Plaato Airlock -> BMP: {self.bmp}, Temp: {self.temperature}"
+        return f"{self.__class__.__name__} -> BMP: {self.bmp}, Temp: {self.temperature}"
 
     @property
     def temperature(self):
         if self.__temperature is not None:
-            return round(self.__temperature, 1)
+            return round(float(self.__temperature), 1)
 
     @property
     def abv(self):
         if self.__abv is not None:
-            return round(self.__abv, 2)
+            return round(float(self.__abv), 2)
 
     @property
     def sg(self):
         if self.__sg is not None:
-            return round(self.__sg, 2)
+            return round(float(self.__sg), 2)
 
     @property
     def og(self):
         if self.__og is not None:
-            return round(self.__og, 2)
+            return round(float(self.__og), 2)
 
     @property
     def co2_volume(self):
         if self.__co2_volume is not None:
-            return round(self.__co2_volume, 2)
+            return round(float(self.__co2_volume), 2)
 
     class Pins(Enum):
         BPM = "v102"
@@ -147,29 +155,41 @@ class PlaatoAirlock:
         CO2_VOLUME = "v119"
 
 
-async def get_keg_data(session: ClientSession, auth_token: str):
-    """Fetch values for each pin"""
-    # url = URL.replace('{auth_token}', auth_token)
-    url = "https://plaato.free.beeceptor.com"
-    result = {}
-    for pin in PlaatoKeg.Pins:
-        result[pin] = await fetch_data(session, url, pin.value)
+class Plaato(object):
 
-    return PlaatoKeg(result)
+    def __init__(self, args):
+        self.__auth_token = args.auth_token
+        self.__url = (args.url or URL)\
+            .replace('{auth_token}', self.__auth_token)
 
+    async def get_keg_data(self, session: ClientSession):
+        """Fetch values for each pin"""
+        result = {}
+        for pin in PlaatoKeg.Pins:
+            result[pin] = await self.fetch_data(session, pin.value)
 
-async def get_airlock_data(session: ClientSession, auth_token: str):
-    """Fetch values for each pin"""
-    # url = URL.replace('{auth_token}', auth_token)
-    url = "https://plaato.free.beeceptor.com"
-    result = {}
-    for pin in PlaatoAirlock.Pins:
-        result[pin] = await fetch_data(session, url, pin.value)
+        return PlaatoKeg(result)
 
-    return PlaatoAirlock(result)
+    async def get_airlock_data(self, session: ClientSession):
+        """Fetch values for each pin"""
+        result = {}
+        for pin in PlaatoAirlock.Pins:
+            result[pin] = await self.fetch_data(session, pin.value)
 
+        return PlaatoAirlock(result)
 
-async def fetch_data(session: ClientSession, url: str, pin: str):
-    async with session.get(f"{url}/{pin}") as resp:
-        data = await resp.json(content_type=None)
-        return data[0] or None
+    async def fetch_data(self, session: ClientSession, pin: str):
+        async with session.get(f"{self.__url}/{pin}") as resp:
+            result = None
+            try:
+                data = await resp.json(content_type=None)
+                if "error" in data:
+                    logging.getLogger(__name__) \
+                        .error(f"Pin {pin} not found")
+                elif len(data) == 1:
+                    result = data[0]
+
+            except JSONDecodeError as e:
+                logging.getLogger(__name__)\
+                    .error(f"Failed to decode json for pin {pin}")
+            return result or None
