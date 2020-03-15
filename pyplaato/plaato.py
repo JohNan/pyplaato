@@ -2,7 +2,7 @@
 from datetime import datetime
 from json import JSONDecodeError
 
-from aiohttp import ClientSession, ClientResponseError
+from aiohttp import ClientSession
 from dataclasses import dataclass
 from enum import Enum
 import logging
@@ -156,11 +156,11 @@ class PlaatoAirlock:
 
 
 class Plaato(object):
+    """Represents a Plaato device"""
 
     def __init__(self, args):
-        self.__auth_token = args.auth_token
         self.__url = (args.url or URL)\
-            .replace('{auth_token}', self.__auth_token)
+            .replace('{auth_token}', (args.auth_token or "NO_AUTH_TOKEN"))
 
     async def get_keg_data(self, session: ClientSession):
         """Fetch values for each pin"""
@@ -179,6 +179,7 @@ class Plaato(object):
         return PlaatoAirlock(result)
 
     async def fetch_data(self, session: ClientSession, pin: str):
+        """Fetches the data for a specific pin"""
         async with session.get(f"{self.__url}/{pin}") as resp:
             result = None
             try:

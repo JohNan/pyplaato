@@ -2,6 +2,8 @@
 
 Fetches data for the Plaato Keg and Plaato Airlock using the official API handed by [blynk.cc](blynk.cc)
 
+To be able to query the API an `auth_token` is required and which can be obtained by following [these](https://plaato.zendesk.com/hc/en-us/articles/360003234717-Auth-token) instructions
+
 For more information about the available pins that can be retrieved please see the official [docs](https://plaato.zendesk.com/hc/en-us/articles/360003234877-Pins) from Plaato
 
 ## Usage
