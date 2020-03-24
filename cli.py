@@ -14,12 +14,14 @@ async def go(args):
         headers["x-api-key"] = args.api_key
 
     async with aiohttp.ClientSession(headers=headers) as session:
-        if args.device == 'keg' or args.device == 'both':
+        if args.device == 'keg':
             keg = await plaato.get_keg_data(session)
-            print(keg)
-        if args.device == 'airlock' or args.device == 'both':
+            for key, attr in keg.get_attrs().items():
+                print(f"{key} -> {attr}")
+        if args.device == 'airlock':
             airlock = await plaato.get_airlock_data(session)
-            print(airlock)
+            for key, attr in airlock.get_attrs().items():
+                print(f"{key} -> {attr}")
 
 
 def main():
@@ -32,7 +34,7 @@ def main():
     required_argument.add_argument('-d',
                                    action='store',
                                    dest='device',
-                                   choices=['keg', 'airlock', 'both'],
+                                   choices=['keg', 'airlock'],
                                    required=True)
     optional_argument.add_argument('-u', dest='url',
                                    help='Mock url')

@@ -1,10 +1,9 @@
 """Fetch data from Plaato Airlock and Keg"""
 from datetime import datetime
 from json import JSONDecodeError
-
 from aiohttp import ClientSession
-from dataclasses import dataclass
 from enum import Enum
+
 import logging
 
 URL = "http://plaato.blynk.cc/{auth_token}/get"
@@ -14,12 +13,15 @@ TEMP_CELSIUS = "°C"
 TEMP_FAHRENHEIT = "°F"
 
 
-class PlaatoType(Enum):
-    Airlock = 1
-    Keg = 2
+class _PinsBase(str, Enum):
+    """Base class"""
 
 
-@dataclass
+class PlaatoDevice(str, Enum):
+    Airlock = "Airlock"
+    Keg = "Keg"
+
+
 class PlaatoKeg:
     """Class for holding a Plaato Keg"""
 
@@ -32,7 +34,7 @@ class PlaatoKeg:
         self.__pouring = attrs[self.Pins.POURING]
         self.__beer_left = attrs[self.Pins.BEER_LEFT] or None
         self.__temperature = attrs[self.Pins.TEMPERATURE] or None
-        self.__unit_type = attrs[self.Pins.UNIT_TYPE]
+        self.__temperature_unit = attrs[self.Pins.TEMPERATURE_UNIT]
         self.__last_pour = attrs[self.Pins.LAST_POUR] or None
         self.__date = attrs[self.Pins.DATE] or None
 
@@ -56,7 +58,7 @@ class PlaatoKeg:
 
     @property
     def temperature_unit(self):
-        if self.__unit_type is "1":
+        if self.__temperature_unit is "1":
             return TEMP_CELSIUS
         return TEMP_FAHRENHEIT
 
@@ -84,21 +86,40 @@ class PlaatoKeg:
         """
         return self.__pouring is "0"
 
-    class Pins(Enum):
+    def get_attrs(self):
+        """Convenience method for Home Assistant"""
+        return {
+            self.Pins.BEER_NAME.name: self.name,
+            self.Pins.PERCENT_BEER_LEFT.name: self.percent_beer_left,
+            self.Pins.POURING.name: self.pouring,
+            self.Pins.BEER_LEFT.name: self.beer_left,
+            self.Pins.BEER_LEFT_UNIT.name: self.beer_left_unit,
+            self.Pins.TEMPERATURE.name: self.temperature,
+            self.Pins.TEMPERATURE_UNIT.name: self.temperature_unit,
+            self.Pins.MEASURE_UNIT.name: self.measure_unit,
+            self.Pins.VOLUME_UNIT.name: self.volume_unit,
+            self.Pins.LAST_POUR.name: self.last_pour,
+            self.Pins.DATE.name: self.date,
+        }
+
+    @staticmethod
+    def pins():
+        return list(PlaatoKeg.Pins)
+
+    class _Pins(_PinsBase, Enum):
         BEER_NAME = "v64"
         PERCENT_BEER_LEFT = "v48"
         POURING = "v49"
         BEER_LEFT = "v51"
         BEER_LEFT_UNIT = "v74"
         TEMPERATURE = "v56"
-        UNIT_TYPE = "v71"
+        TEMPERATURE_UNIT = "v71"
         MEASURE_UNIT = "v75"
         VOLUME_UNIT = "v82"
         LAST_POUR = "v59"
         DATE = "v67"
 
 
-@dataclass
 class PlaatoAirlock:
     """Class for holding a Plaato Airlock"""
 
@@ -115,7 +136,9 @@ class PlaatoAirlock:
         self.__temperature = attrs[self.Pins.TEMPERATURE] or None
 
     def __repr__(self):
-        return f"{self.__class__.__name__} -> BMP: {self.bmp}, Temp: {self.temperature}"
+        return (f"{self.__class__.__name__} -> "
+                f"BMP: {self.bmp}, "
+                f"Temp: {self.temperature}")
 
     @property
     def temperature(self):
@@ -142,7 +165,26 @@ class PlaatoAirlock:
         if self.__co2_volume is not None:
             return round(float(self.__co2_volume), 2)
 
-    class Pins(Enum):
+    def get_attrs(self):
+        """Convenience method for Home Assistant"""
+        return {
+            self.Pins.BPM.name: self.bmp,
+            self.Pins.TEMPERATURE.name: self.temperature,
+            self.Pins.BATCH_VOLUME.name: self.batch_volume,
+            self.Pins.OG.name: self.og,
+            self.Pins.SG.name: self.sg,
+            self.Pins.ABV.name: self.abv,
+            self.Pins.TEMPERATURE_UNIT.name: self.temperature_unit,
+            self.Pins.VOLUME_UNIT.name: self.volume_unit,
+            self.Pins.BUBBLES.name: self.bubbles,
+            self.Pins.CO2_VOLUME.name: self.co2_volume,
+        }
+
+    @staticmethod
+    def pins():
+        return list(PlaatoAirlock.Pins)
+
+    class Pins(_PinsBase, Enum):
         BPM = "v102"
         TEMPERATURE = "v103"
         BATCH_VOLUME = "v104"
@@ -165,32 +207,32 @@ class Plaato(object):
     async def get_keg_data(self, session: ClientSession):
         """Fetch values for each pin"""
         result = {}
-        for pin in PlaatoKeg.Pins:
-            result[pin] = await self.fetch_data(session, pin.value)
+        for pin in PlaatoKeg.pins():
+            result[pin] = await self.fetch_data(session, pin)
 
         return PlaatoKeg(result)
 
     async def get_airlock_data(self, session: ClientSession):
         """Fetch values for each pin"""
         result = {}
-        for pin in PlaatoAirlock.Pins:
-            result[pin] = await self.fetch_data(session, pin.value)
+        for pin in PlaatoAirlock.pins():
+            result[pin] = await self.fetch_data(session, pin)
 
         return PlaatoAirlock(result)
 
-    async def fetch_data(self, session: ClientSession, pin: str):
+    async def fetch_data(self, session: ClientSession, pin: _PinsBase):
         """Fetches the data for a specific pin"""
-        async with session.get(f"{self.__url}/{pin}") as resp:
+        async with session.get(f"{self.__url}/{pin.value}") as resp:
             result = None
             try:
                 data = await resp.json(content_type=None)
                 if "error" in data:
                     logging.getLogger(__name__) \
-                        .error(f"Pin {pin} not found")
+                        .error(f"Pin {pin.name} not found")
                 elif len(data) == 1:
                     result = data[0]
 
             except JSONDecodeError as e:
                 logging.getLogger(__name__)\
-                    .error(f"Failed to decode json for pin {pin}")
+                    .error(f"Failed to decode json for pin {pin} - {e.msg}")
             return result or None
