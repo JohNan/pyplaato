@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyplaato",
-    version="0.0.2",
+    version="0.0.3",
     author="JohNan",
     author_email="johan.nanzen@gmail.com",
     description="Asynchronous Python client for getting Plaato Airlock and Keg data",

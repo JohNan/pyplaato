@@ -8,20 +8,20 @@ from pyplaato.plaato import Plaato
 
 
 async def go(args):
-    plaato = Plaato(args)
     headers = {}
     if args.api_key:
         headers["x-api-key"] = args.api_key
+    plaato = Plaato(args.auth_token, args.url, headers)
 
-    async with aiohttp.ClientSession(headers=headers) as session:
+    async with aiohttp.ClientSession() as session:
         if args.device == 'keg':
             keg = await plaato.get_keg_data(session)
             for key, attr in keg.get_attrs().items():
-                print(f"{key} -> {attr}")
+                print(f"{key.name} -> {attr}")
         if args.device == 'airlock':
             airlock = await plaato.get_airlock_data(session)
             for key, attr in airlock.get_attrs().items():
-                print(f"{key} -> {attr}")
+                print(f"{key.name} -> {attr}")
 
 
 def main():

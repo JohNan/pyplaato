@@ -1,6 +1,8 @@
 """Fetch data from Plaato Airlock and Keg"""
 from datetime import datetime
 from json import JSONDecodeError
+from typing import Any
+
 from aiohttp import ClientSession
 from enum import Enum
 
@@ -26,17 +28,17 @@ class PlaatoKeg:
     """Class for holding a Plaato Keg"""
 
     def __init__(self, attrs):
-        self.beer_left_unit = attrs[self.Pins.BEER_LEFT_UNIT] or None
-        self.volume_unit = attrs[self.Pins.VOLUME_UNIT] or None
-        self.measure_unit = attrs[self.Pins.MEASURE_UNIT] or None
-        self.name = attrs[self.Pins.BEER_NAME] or "Beer"
-        self.__percent_beer_left = attrs[self.Pins.PERCENT_BEER_LEFT] or None
-        self.__pouring = attrs[self.Pins.POURING]
-        self.__beer_left = attrs[self.Pins.BEER_LEFT] or None
-        self.__temperature = attrs[self.Pins.TEMPERATURE] or None
-        self.__temperature_unit = attrs[self.Pins.TEMPERATURE_UNIT]
-        self.__last_pour = attrs[self.Pins.LAST_POUR] or None
-        self.__date = attrs[self.Pins.DATE] or None
+        self.beer_left_unit = attrs.get(self.Pins.BEER_LEFT_UNIT, None)
+        self.volume_unit = attrs.get(self.Pins.VOLUME_UNIT, None)
+        self.measure_unit = attrs.get(self.Pins.MEASURE_UNIT, None)
+        self.name = attrs.get(self.Pins.BEER_NAME, "Beer")
+        self.__percent_beer_left = attrs.get(self.Pins.PERCENT_BEER_LEFT, None)
+        self.__pouring = attrs.get(self.Pins.POURING, False)
+        self.__beer_left = attrs.get(self.Pins.BEER_LEFT, None)
+        self.__temperature = attrs.get(self.Pins.TEMPERATURE, None)
+        self.__temperature_unit = attrs.get(self.Pins.TEMPERATURE_UNIT, None)
+        self.__last_pour = attrs.get(self.Pins.LAST_POUR, None)
+        self.__date = attrs.get(self.Pins.DATE, None)
 
     def __repr__(self):
         return f"{self.__class__.__name__} -> " \
@@ -89,24 +91,24 @@ class PlaatoKeg:
     def get_attrs(self):
         """Convenience method for Home Assistant"""
         return {
-            self.Pins.BEER_NAME.name: self.name,
-            self.Pins.PERCENT_BEER_LEFT.name: self.percent_beer_left,
-            self.Pins.POURING.name: self.pouring,
-            self.Pins.BEER_LEFT.name: self.beer_left,
-            self.Pins.BEER_LEFT_UNIT.name: self.beer_left_unit,
-            self.Pins.TEMPERATURE.name: self.temperature,
-            self.Pins.TEMPERATURE_UNIT.name: self.temperature_unit,
-            self.Pins.MEASURE_UNIT.name: self.measure_unit,
-            self.Pins.VOLUME_UNIT.name: self.volume_unit,
-            self.Pins.LAST_POUR.name: self.last_pour,
-            self.Pins.DATE.name: self.date,
+            self.Pins.BEER_NAME: self.name,
+            self.Pins.PERCENT_BEER_LEFT: self.percent_beer_left,
+            self.Pins.POURING: self.pouring,
+            self.Pins.BEER_LEFT: self.beer_left,
+            self.Pins.BEER_LEFT_UNIT: self.beer_left_unit,
+            self.Pins.TEMPERATURE: self.temperature,
+            self.Pins.TEMPERATURE_UNIT: self.temperature_unit,
+            self.Pins.MEASURE_UNIT: self.measure_unit,
+            self.Pins.VOLUME_UNIT: self.volume_unit,
+            self.Pins.LAST_POUR: self.last_pour,
+            self.Pins.DATE: self.date,
         }
 
     @staticmethod
     def pins():
         return list(PlaatoKeg.Pins)
 
-    class _Pins(_PinsBase, Enum):
+    class Pins(_PinsBase, Enum):
         BEER_NAME = "v64"
         PERCENT_BEER_LEFT = "v48"
         POURING = "v49"
@@ -124,16 +126,16 @@ class PlaatoAirlock:
     """Class for holding a Plaato Airlock"""
 
     def __init__(self, attrs):
-        self.bmp = attrs[self.Pins.BPM] or None
-        self.temperature_unit = attrs[self.Pins.TEMPERATURE_UNIT]
-        self.volume_unit = attrs[self.Pins.VOLUME_UNIT]
-        self.bubbles = attrs[self.Pins.BUBBLES]
-        self.batch_volume = attrs[self.Pins.BATCH_VOLUME]
-        self.__sg = attrs[self.Pins.ABV] or None
-        self.__og = attrs[self.Pins.ABV] or None
-        self.__abv = attrs[self.Pins.ABV] or None
-        self.__co2_volume = attrs[self.Pins.ABV] or None
-        self.__temperature = attrs[self.Pins.TEMPERATURE] or None
+        self.bmp = attrs.get(self.Pins.BPM, None)
+        self.temperature_unit = attrs.get(self.Pins.TEMPERATURE_UNIT, None)
+        self.volume_unit = attrs.get(self.Pins.VOLUME_UNIT, None)
+        self.bubbles = attrs.get(self.Pins.BUBBLES, None)
+        self.batch_volume = attrs.get(self.Pins.BATCH_VOLUME, None)
+        self.__sg = attrs.get(self.Pins.SG, None)
+        self.__og = attrs.get(self.Pins.OG, None)
+        self.__abv = attrs.get(self.Pins.ABV, None)
+        self.__co2_volume = attrs.get(self.Pins.CO2_VOLUME, None)
+        self.__temperature = attrs.get(self.Pins.TEMPERATURE, None)
 
     def __repr__(self):
         return (f"{self.__class__.__name__} -> "
@@ -168,16 +170,16 @@ class PlaatoAirlock:
     def get_attrs(self):
         """Convenience method for Home Assistant"""
         return {
-            self.Pins.BPM.name: self.bmp,
-            self.Pins.TEMPERATURE.name: self.temperature,
-            self.Pins.BATCH_VOLUME.name: self.batch_volume,
-            self.Pins.OG.name: self.og,
-            self.Pins.SG.name: self.sg,
-            self.Pins.ABV.name: self.abv,
-            self.Pins.TEMPERATURE_UNIT.name: self.temperature_unit,
-            self.Pins.VOLUME_UNIT.name: self.volume_unit,
-            self.Pins.BUBBLES.name: self.bubbles,
-            self.Pins.CO2_VOLUME.name: self.co2_volume,
+            self.Pins.BPM: self.bmp,
+            self.Pins.TEMPERATURE: self.temperature,
+            self.Pins.BATCH_VOLUME: self.batch_volume,
+            self.Pins.OG: self.og,
+            self.Pins.SG: self.sg,
+            self.Pins.ABV: self.abv,
+            self.Pins.TEMPERATURE_UNIT: self.temperature_unit,
+            self.Pins.VOLUME_UNIT: self.volume_unit,
+            self.Pins.BUBBLES: self.bubbles,
+            self.Pins.CO2_VOLUME: self.co2_volume,
         }
 
     @staticmethod
@@ -200,9 +202,11 @@ class PlaatoAirlock:
 class Plaato(object):
     """Represents a Plaato device"""
 
-    def __init__(self, args):
-        self.__url = (args.url or URL)\
-            .replace('{auth_token}', (args.auth_token or "NO_AUTH_TOKEN"))
+    def __init__(self, auth_token="NO_AUTH_TOKEN", url=URL, headers=None):
+        if headers is None:
+            headers = {}
+        self.__headers = headers
+        self.__url = url.replace('{auth_token}', auth_token)
 
     async def get_keg_data(self, session: ClientSession):
         """Fetch values for each pin"""
@@ -222,7 +226,10 @@ class Plaato(object):
 
     async def fetch_data(self, session: ClientSession, pin: _PinsBase):
         """Fetches the data for a specific pin"""
-        async with session.get(f"{self.__url}/{pin.value}") as resp:
+        async with session.get(
+                url=f"{self.__url}/{pin.value}",
+                headers=self.__headers
+        ) as resp:
             result = None
             try:
                 data = await resp.json(content_type=None)
