@@ -15,7 +15,7 @@ optional arguments:
 
 required arguments:
   -t AUTH_TOKEN         Auth token received from Plaato
-  -d {keg,airlock,both}
+  -d {keg,airlock}
 
 optional arguments:
   -u URL                Mock url
@@ -24,7 +24,7 @@ optional arguments:
 
 ## Available pins
 
-###Keg
+### Keg
 ```python
     BEER_NAME = "v64"
     PERCENT_BEER_LEFT = "v48"
@@ -39,7 +39,7 @@ optional arguments:
     DATE = "v67"
 ```
 
-###AirLock
+### AirLock
 ```python
     BPM = "v102"
     TEMPERATURE = "v103"
@@ -53,5 +53,5 @@ optional arguments:
     CO2_VOLUME = "v119"
 ```
 
-###Disclaimer
+### Disclaimer
 This python library was not made by Plaato. It is not official, not developed, and not supported by Plaato.
