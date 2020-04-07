@@ -1,7 +1,7 @@
 """Fetch data from Plaato Airlock and Keg"""
 from datetime import datetime
 from json import JSONDecodeError
-from typing import Any
+from abc import ABC, abstractmethod
 
 from aiohttp import ClientSession
 from enum import Enum
@@ -11,27 +11,63 @@ import logging
 URL = "http://plaato.blynk.cc/{auth_token}/get"
 
 # Temperature units
-TEMP_CELSIUS = "°C"
-TEMP_FAHRENHEIT = "°F"
+UNIT_TEMP_CELSIUS = "°C"
+UNIT_TEMP_FAHRENHEIT = "°F"
+UNIT_PERCENTAGE = "%"
 
 
 class _PinsBase(str, Enum):
     """Base class"""
 
 
-class PlaatoDevice(str, Enum):
+class PlaatoDeviceType(str, Enum):
     Airlock = "Airlock"
     Keg = "Keg"
 
 
-class PlaatoKeg:
+class PlaatoDevice(ABC):
+    @property
+    @abstractmethod
+    def device_type(self) -> PlaatoDeviceType:
+        pass
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def sensors(self) -> dict:
+        """Convenience method for Home Assistant"""
+        pass
+
+    @abstractmethod
+    def get_unit_of_measurement(self, pin: _PinsBase):
+        """Convenience method to get unit of measurement for Home Assistant"""
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def pins() -> list:
+        pass
+
+
+class PlaatoKeg(PlaatoDevice):
     """Class for holding a Plaato Keg"""
+
+    device_type = PlaatoDeviceType.Keg
 
     def __init__(self, attrs):
         self.beer_left_unit = attrs.get(self.Pins.BEER_LEFT_UNIT, None)
         self.volume_unit = attrs.get(self.Pins.VOLUME_UNIT, None)
+        self.mass_unit = attrs.get(self.Pins.MASS_UNIT, None)
         self.measure_unit = attrs.get(self.Pins.MEASURE_UNIT, None)
-        self.name = attrs.get(self.Pins.BEER_NAME, "Beer")
+        self.firmware_version = attrs.get(self.Pins.FIRMWARE_VERSION, None)
+        self.og = attrs.get(self.Pins.OG, None)
+        self.fg = attrs.get(self.Pins.FG, None)
+        self.__abv = attrs.get(self.Pins.ABV, None)
+        self.__name = attrs.get(self.Pins.BEER_NAME, "Beer")
         self.__percent_beer_left = attrs.get(self.Pins.PERCENT_BEER_LEFT, None)
         self.__pouring = attrs.get(self.Pins.POURING, False)
         self.__beer_left = attrs.get(self.Pins.BEER_LEFT, None)
@@ -61,8 +97,8 @@ class PlaatoKeg:
     @property
     def temperature_unit(self):
         if self.__temperature_unit is "1":
-            return TEMP_CELSIUS
-        return TEMP_FAHRENHEIT
+            return UNIT_TEMP_CELSIUS
+        return UNIT_TEMP_FAHRENHEIT
 
     @property
     def beer_left(self):
@@ -80,6 +116,17 @@ class PlaatoKeg:
             return round(float(self.__last_pour), 2)
 
     @property
+    def last_pour_unit(self):
+        if self.measure_unit is "1":
+            return self.mass_unit
+        return self.volume_unit
+
+    @property
+    def abv(self):
+        if self.__abv is not None:
+            return round(float(self.__abv), 2)
+
+    @property
     def pouring(self):
         """
         0 = Pouring
@@ -88,21 +135,35 @@ class PlaatoKeg:
         """
         return self.__pouring is "0"
 
-    def get_attrs(self):
-        """Convenience method for Home Assistant"""
+    @property
+    def name(self) -> str:
+        return self.__name
+
+    @property
+    def sensors(self) -> dict:
         return {
-            self.Pins.BEER_NAME: self.name,
             self.Pins.PERCENT_BEER_LEFT: self.percent_beer_left,
             self.Pins.POURING: self.pouring,
             self.Pins.BEER_LEFT: self.beer_left,
-            self.Pins.BEER_LEFT_UNIT: self.beer_left_unit,
             self.Pins.TEMPERATURE: self.temperature,
-            self.Pins.TEMPERATURE_UNIT: self.temperature_unit,
-            self.Pins.MEASURE_UNIT: self.measure_unit,
-            self.Pins.VOLUME_UNIT: self.volume_unit,
             self.Pins.LAST_POUR: self.last_pour,
             self.Pins.DATE: self.date,
+            self.Pins.OG: self.og,
+            self.Pins.FG: self.fg,
+            self.Pins.ABV: self.abv,
         }
+
+    def get_unit_of_measurement(self, pin: _PinsBase):
+        if pin == self.Pins.BEER_LEFT:
+            return self.beer_left_unit
+        if pin == self.Pins.TEMPERATURE:
+            return self.temperature_unit
+        if pin == self.Pins.LAST_POUR:
+            return self.last_pour_unit
+        if pin == self.Pins.ABV or pin == self.Pins.PERCENT_BEER_LEFT:
+            return UNIT_PERCENTAGE
+
+        return ""
 
     @staticmethod
     def pins():
@@ -117,13 +178,20 @@ class PlaatoKeg:
         TEMPERATURE = "v56"
         TEMPERATURE_UNIT = "v71"
         MEASURE_UNIT = "v75"
+        MASS_UNIT = "v73"
         VOLUME_UNIT = "v82"
         LAST_POUR = "v59"
         DATE = "v67"
+        OG = "v65"
+        FG = "v66"
+        ABV = "v68"
+        FIRMWARE_VERSION = "v93"
 
 
-class PlaatoAirlock:
+class PlaatoAirlock(PlaatoDevice):
     """Class for holding a Plaato Airlock"""
+
+    device_type = PlaatoDeviceType.Airlock
 
     def __init__(self, attrs):
         self.bmp = attrs.get(self.Pins.BPM, None)
@@ -167,8 +235,12 @@ class PlaatoAirlock:
         if self.__co2_volume is not None:
             return round(float(self.__co2_volume), 2)
 
-    def get_attrs(self):
-        """Convenience method for Home Assistant"""
+    @property
+    def name(self) -> str:
+        return "Airlock"
+
+    @property
+    def sensors(self) -> dict:
         return {
             self.Pins.BPM: self.bmp,
             self.Pins.TEMPERATURE: self.temperature,
@@ -176,11 +248,21 @@ class PlaatoAirlock:
             self.Pins.OG: self.og,
             self.Pins.SG: self.sg,
             self.Pins.ABV: self.abv,
-            self.Pins.TEMPERATURE_UNIT: self.temperature_unit,
-            self.Pins.VOLUME_UNIT: self.volume_unit,
             self.Pins.BUBBLES: self.bubbles,
             self.Pins.CO2_VOLUME: self.co2_volume,
         }
+
+    def get_unit_of_measurement(self, pin: _PinsBase):
+        if pin == self.Pins.TEMPERATURE:
+            return self.temperature
+        if pin == self.Pins.BATCH_VOLUME or self.Pins.CO2_VOLUME:
+            return self.volume_unit
+        if pin == self.Pins.BPM:
+            return "bpm"
+        if pin == self.Pins.ABV:
+            return UNIT_PERCENTAGE
+
+        return ""
 
     @staticmethod
     def pins():
@@ -208,7 +290,18 @@ class Plaato(object):
         self.__headers = headers
         self.__url = url.replace('{auth_token}', auth_token)
 
-    async def get_keg_data(self, session: ClientSession):
+    async def get_data(
+            self, session: ClientSession,
+            device_type: PlaatoDeviceType
+    ) -> PlaatoDevice:
+        if device_type == PlaatoDeviceType.Keg:
+            return await self.get_keg_data(session)
+        if device_type == PlaatoDeviceType.Airlock:
+            return await self.get_airlock_data(session)
+
+        pass
+
+    async def get_keg_data(self, session: ClientSession) -> PlaatoKeg:
         """Fetch values for each pin"""
         result = {}
         for pin in PlaatoKeg.pins():
@@ -216,7 +309,7 @@ class Plaato(object):
 
         return PlaatoKeg(result)
 
-    async def get_airlock_data(self, session: ClientSession):
+    async def get_airlock_data(self, session: ClientSession) -> PlaatoAirlock:
         """Fetch values for each pin"""
         result = {}
         for pin in PlaatoAirlock.pins():

@@ -4,7 +4,10 @@ import sys
 import aiohttp
 import asyncio
 
-from pyplaato.plaato import Plaato
+from pyplaato.plaato import (
+    Plaato,
+    PlaatoDeviceType
+)
 
 
 async def go(args):
@@ -15,13 +18,13 @@ async def go(args):
 
     async with aiohttp.ClientSession() as session:
         if args.device == 'keg':
-            keg = await plaato.get_keg_data(session)
-            for key, attr in keg.get_attrs().items():
-                print(f"{key.name} -> {attr}")
+            device_type = PlaatoDeviceType.Keg
         if args.device == 'airlock':
-            airlock = await plaato.get_airlock_data(session)
-            for key, attr in airlock.get_attrs().items():
-                print(f"{key.name} -> {attr}")
+            device_type = PlaatoDeviceType.Airlock
+        result = await plaato.get_data(session, device_type)
+        print(f"Device type: {result.device_type}")
+        for key, attr in result.sensors.items():
+            print(f"{key.name} -> {attr} {result.get_unit_of_measurement(key)}")
 
 
 def main():
