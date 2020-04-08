@@ -24,7 +24,7 @@ async def go(args):
         result = await plaato.get_data(session, device_type)
         print(f"Device type: {result.device_type}")
         for key, attr in result.sensors.items():
-            print(f"{key.name} -> {attr} {result.get_unit_of_measurement(key)}")
+            print(f"{result.get_sensor_name(key)}: {attr} {result.get_unit_of_measurement(key)}")
 
 
 def main():

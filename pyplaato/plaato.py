@@ -43,6 +43,11 @@ class PlaatoDevice(ABC):
         pass
 
     @abstractmethod
+    def get_sensor_name(self, pin: _PinsBase) -> str:
+        """Convenience method for Home Assistant"""
+        pass
+
+    @abstractmethod
     def get_unit_of_measurement(self, pin: _PinsBase):
         """Convenience method to get unit of measurement for Home Assistant"""
         pass
@@ -138,6 +143,20 @@ class PlaatoKeg(PlaatoDevice):
     @property
     def name(self) -> str:
         return self.__name
+
+    def get_sensor_name(self, pin: _PinsBase) -> str:
+        names = {
+            self.Pins.PERCENT_BEER_LEFT: "Percent Beer Left",
+            self.Pins.POURING: "Pouring",
+            self.Pins.BEER_LEFT: "Beer Left",
+            self.Pins.TEMPERATURE: "Temperature",
+            self.Pins.LAST_POUR: "Last Pour Amount",
+            self.Pins.DATE: "Date",
+            self.Pins.OG: "Original Gravity",
+            self.Pins.FG: "Final Gravity",
+            self.Pins.ABV: "Alcohol by Volume",
+        }
+        return names.get(pin, pin.name)
 
     @property
     def sensors(self) -> dict:
@@ -239,6 +258,19 @@ class PlaatoAirlock(PlaatoDevice):
     def name(self) -> str:
         return "Airlock"
 
+    def get_sensor_name(self, pin: _PinsBase) -> str:
+        names = {
+            self.Pins.BPM: "Bubbles per Minute",
+            self.Pins.TEMPERATURE: "Temperature",
+            self.Pins.BATCH_VOLUME: "Batch Volume",
+            self.Pins.OG: "Original Gravity",
+            self.Pins.SG: "Specific Gravity",
+            self.Pins.ABV: "Alcohol by Volume",
+            self.Pins.BUBBLES: "Bubbles",
+            self.Pins.CO2_VOLUME: "CO2 Volume",
+        }
+        return names.get(pin, pin.name)
+
     @property
     def sensors(self) -> dict:
         return {
@@ -254,7 +286,7 @@ class PlaatoAirlock(PlaatoDevice):
 
     def get_unit_of_measurement(self, pin: _PinsBase):
         if pin == self.Pins.TEMPERATURE:
-            return self.temperature
+            return self.temperature_unit
         if pin == self.Pins.BATCH_VOLUME or self.Pins.CO2_VOLUME:
             return self.volume_unit
         if pin == self.Pins.BPM:
