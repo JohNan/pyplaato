@@ -2,6 +2,7 @@
 from datetime import datetime
 from json import JSONDecodeError
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from aiohttp import ClientSession
 from enum import Enum
@@ -339,6 +340,11 @@ class Plaato(object):
         for pin in PlaatoKeg.pins():
             result[pin] = await self.fetch_data(session, pin)
 
+        errors = Plaato._get_errors_as_string(result)
+        if errors:
+            logging.getLogger(__name__) \
+                .error(f"Failed to get values for {errors}")
+
         return PlaatoKeg(result)
 
     async def get_airlock_data(self, session: ClientSession) -> PlaatoAirlock:
@@ -346,6 +352,11 @@ class Plaato(object):
         result = {}
         for pin in PlaatoAirlock.pins():
             result[pin] = await self.fetch_data(session, pin)
+
+        errors = Plaato._get_errors_as_string(result)
+        if errors:
+            logging.getLogger(__name__) \
+                .error(f"Failed to get values for {errors}")
 
         return PlaatoAirlock(result)
 
@@ -360,11 +371,18 @@ class Plaato(object):
                 data = await resp.json(content_type=None)
                 if "error" in data:
                     logging.getLogger(__name__) \
-                        .error(f"Pin {pin.name} not found")
+                        .debug(f"Pin {pin.name} not found")
                 elif len(data) == 1:
                     result = data[0]
 
             except JSONDecodeError as e:
                 logging.getLogger(__name__)\
                     .error(f"Failed to decode json for pin {pin} - {e.msg}")
-            return result or None
+            return result
+
+    @staticmethod
+    def _get_errors_as_string(result: dict) -> Optional[str]:
+        errors = dict(filter(lambda elem: elem[1] is None, result.items()))
+        if errors:
+            return ', '.join(map(lambda elem: elem.name, errors.keys()))
+        return None
