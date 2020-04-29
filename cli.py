@@ -26,8 +26,15 @@ async def go(args):
         print(f"Device type: {result.device_type}")
         print(f"Name: {result.name}")
         print(f"Date: {datetime.fromtimestamp(result.date).strftime('%x')}")
+        print("Sensors:")
         for key, attr in result.sensors.items():
-            print(f"{result.get_sensor_name(key)}: {attr} {result.get_unit_of_measurement(key)}")
+            print(f"\t{result.get_sensor_name(key)}: {attr} {result.get_unit_of_measurement(key)}")
+        print("Binary Sensors:")
+        for key, attr in result.binary_sensors.items():
+            print(f"\t{result.get_sensor_name(key)}: {attr}")
+        print("Attributes:")
+        for key, attr in result.attributes.items():
+            print(f"\t{key}: {attr}")
 
 
 def main():

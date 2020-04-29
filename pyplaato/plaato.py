@@ -43,10 +43,24 @@ class PlaatoDevice(ABC):
         return datetime.now().timestamp()
 
     @property
+    def firmware_version(self) -> str:
+        return ""
+
+    @property
     @abstractmethod
     def sensors(self) -> dict:
         """Convenience method for Home Assistant"""
         pass
+
+    @property
+    def binary_sensors(self) -> dict:
+        """Convenience method for Home Assistant"""
+        return {}
+
+    @property
+    def attributes(self) -> dict:
+        """Convenience method for Home Assistant"""
+        return {}
 
     @abstractmethod
     def get_sensor_name(self, pin: _PinsBase) -> str:
@@ -74,9 +88,11 @@ class PlaatoKeg(PlaatoDevice):
         self.volume_unit = attrs.get(self.Pins.VOLUME_UNIT, None)
         self.mass_unit = attrs.get(self.Pins.MASS_UNIT, None)
         self.measure_unit = attrs.get(self.Pins.MEASURE_UNIT, None)
-        self.firmware_version = attrs.get(self.Pins.FIRMWARE_VERSION, None)
         self.og = attrs.get(self.Pins.OG, None)
         self.fg = attrs.get(self.Pins.FG, None)
+        self.__mode = attrs.get(self.Pins.MODE, None)
+        self.__firmware_version = attrs.get(self.Pins.FIRMWARE_VERSION, None)
+        self.__leak_detection = attrs.get(self.Pins.LEAK_DETECTION, None)
         self.__abv = attrs.get(self.Pins.ABV, None)
         self.__name = attrs.get(self.Pins.BEER_NAME, "Beer")
         self.__percent_beer_left = attrs.get(self.Pins.PERCENT_BEER_LEFT, None)
@@ -147,8 +163,29 @@ class PlaatoKeg(PlaatoDevice):
         return self.__pouring is "255"
 
     @property
+    def leak_detection(self):
+        """
+        1 = Leaking
+        0 = Not Leaking
+        :return: True if 1 = Leaking else False
+        """
+        return self.__leak_detection is "1"
+
+    @property
+    def mode(self):
+        """
+        1 = Beer
+        2 = Co2
+        """
+        return "Beer" if self.__mode is "1" else "Co2"
+
+    @property
     def name(self) -> str:
         return self.__name
+
+    @property
+    def firmware_version(self) -> str:
+        return self.__firmware_version
 
     def get_sensor_name(self, pin: _PinsBase) -> str:
         names = {
@@ -160,6 +197,8 @@ class PlaatoKeg(PlaatoDevice):
             self.Pins.OG: "Original Gravity",
             self.Pins.FG: "Final Gravity",
             self.Pins.ABV: "Alcohol by Volume",
+            self.Pins.LEAK_DETECTION: "Leaking",
+            self.Pins.MODE: "Mode"
         }
         return names.get(pin, pin.name)
 
@@ -167,13 +206,25 @@ class PlaatoKeg(PlaatoDevice):
     def sensors(self) -> dict:
         return {
             self.Pins.PERCENT_BEER_LEFT: self.percent_beer_left,
-            self.Pins.POURING: self.pouring,
             self.Pins.BEER_LEFT: self.beer_left,
             self.Pins.TEMPERATURE: self.temperature,
-            self.Pins.LAST_POUR: self.last_pour,
-            self.Pins.OG: self.og,
-            self.Pins.FG: self.fg,
-            self.Pins.ABV: self.abv,
+            self.Pins.LAST_POUR: self.last_pour
+        }
+
+    @property
+    def binary_sensors(self) -> dict:
+        return {
+            self.Pins.LEAK_DETECTION: self.leak_detection,
+            self.Pins.POURING: self.pouring,
+        }
+
+    @property
+    def attributes(self) -> dict:
+        return {
+            self.get_sensor_name(self.Pins.MODE): self.mode,
+            self.get_sensor_name(self.Pins.OG): self.og,
+            self.get_sensor_name(self.Pins.FG): self.fg,
+            self.get_sensor_name(self.Pins.ABV): self.abv
         }
 
     def get_unit_of_measurement(self, pin: _PinsBase):
@@ -209,6 +260,8 @@ class PlaatoKeg(PlaatoDevice):
         FG = "v66"
         ABV = "v68"
         FIRMWARE_VERSION = "v93"
+        LEAK_DETECTION = "v83"
+        MODE = "v88"
 
 
 class PlaatoAirlock(PlaatoDevice):
