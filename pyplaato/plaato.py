@@ -8,6 +8,7 @@ from aiohttp import ClientSession
 from enum import Enum
 
 import logging
+import dateutil.parser
 
 URL = "http://plaato.blynk.cc/{auth_token}/get"
 
@@ -36,6 +37,10 @@ class PlaatoDevice(ABC):
     @abstractmethod
     def name(self) -> str:
         pass
+
+    @property
+    def date(self) -> float:
+        return datetime.now().timestamp()
 
     @property
     @abstractmethod
@@ -89,11 +94,11 @@ class PlaatoKeg(PlaatoDevice):
                f"Pouring: {self.pouring}"
 
     @property
-    def date(self):
+    def date(self) -> float:
         if self.__date is not None:
-            date = datetime.strptime(self.__date, "%m/%d/%Y")
+            date = dateutil.parser.parse(self.__date)
             return datetime.timestamp(date)
-        return None
+        return super().date
 
     @property
     def temperature(self):
@@ -135,11 +140,11 @@ class PlaatoKeg(PlaatoDevice):
     @property
     def pouring(self):
         """
-        0 = Pouring
-        255 = Not Pouring
-        :return: True if 1 = Pouring else False
+        0 = Not Pouring
+        255 = Pouring
+        :return: True if 255 = Pouring else False
         """
-        return self.__pouring is "0"
+        return self.__pouring is "255"
 
     @property
     def name(self) -> str:
@@ -152,7 +157,6 @@ class PlaatoKeg(PlaatoDevice):
             self.Pins.BEER_LEFT: "Beer Left",
             self.Pins.TEMPERATURE: "Temperature",
             self.Pins.LAST_POUR: "Last Pour Amount",
-            self.Pins.DATE: "Date",
             self.Pins.OG: "Original Gravity",
             self.Pins.FG: "Final Gravity",
             self.Pins.ABV: "Alcohol by Volume",
@@ -167,7 +171,6 @@ class PlaatoKeg(PlaatoDevice):
             self.Pins.BEER_LEFT: self.beer_left,
             self.Pins.TEMPERATURE: self.temperature,
             self.Pins.LAST_POUR: self.last_pour,
-            self.Pins.DATE: self.date,
             self.Pins.OG: self.og,
             self.Pins.FG: self.fg,
             self.Pins.ABV: self.abv,
@@ -321,6 +324,8 @@ class Plaato(object):
         if headers is None:
             headers = {}
         self.__headers = headers
+        if not url:
+            url = URL
         self.__url = url.replace('{auth_token}', auth_token)
 
     async def get_data(
@@ -369,11 +374,14 @@ class Plaato(object):
             result = None
             try:
                 data = await resp.json(content_type=None)
-                if "error" in data:
-                    logging.getLogger(__name__) \
-                        .debug(f"Pin {pin.name} not found")
-                elif len(data) == 1:
-                    result = data[0]
+                if Plaato._iterable(data):
+                    if "error" in data:
+                        logging.getLogger(__name__) \
+                            .debug(f"Pin {pin.name} not found")
+                    elif len(data) == 1:
+                        result = data[0]
+                else:
+                    result = data
 
             except JSONDecodeError as e:
                 logging.getLogger(__name__)\
@@ -386,3 +394,12 @@ class Plaato(object):
         if errors:
             return ', '.join(map(lambda elem: elem.name, errors.keys()))
         return None
+
+    @staticmethod
+    def _iterable(obj):
+        try:
+            iter(obj)
+        except TypeError:
+            return False
+        else:
+            return True

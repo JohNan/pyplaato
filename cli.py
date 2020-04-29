@@ -4,6 +4,7 @@ import sys
 import aiohttp
 import asyncio
 
+from datetime import datetime
 from pyplaato.plaato import (
     Plaato,
     PlaatoDeviceType
@@ -23,6 +24,8 @@ async def go(args):
             device_type = PlaatoDeviceType.Airlock
         result = await plaato.get_data(session, device_type)
         print(f"Device type: {result.device_type}")
+        print(f"Name: {result.name}")
+        print(f"Date: {datetime.fromtimestamp(result.date).strftime('%x')}")
         for key, attr in result.sensors.items():
             print(f"{result.get_sensor_name(key)}: {attr} {result.get_unit_of_measurement(key)}")
 
