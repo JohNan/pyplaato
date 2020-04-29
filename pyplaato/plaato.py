@@ -198,7 +198,9 @@ class PlaatoKeg(PlaatoDevice):
             self.Pins.FG: "Final Gravity",
             self.Pins.ABV: "Alcohol by Volume",
             self.Pins.LEAK_DETECTION: "Leaking",
-            self.Pins.MODE: "Mode"
+            self.Pins.MODE: "Mode",
+            self.Pins.DATE: "Keg Date",
+            self.Pins.BEER_NAME: "Beer Name"
         }
         return names.get(pin, pin.name)
 
@@ -221,6 +223,8 @@ class PlaatoKeg(PlaatoDevice):
     @property
     def attributes(self) -> dict:
         return {
+            self.get_sensor_name(self.Pins.BEER_NAME): self.name,
+            self.get_sensor_name(self.Pins.DATE): datetime.fromtimestamp(self.date).strftime('%x'),
             self.get_sensor_name(self.Pins.MODE): self.mode,
             self.get_sensor_name(self.Pins.OG): self.og,
             self.get_sensor_name(self.Pins.FG): self.fg,

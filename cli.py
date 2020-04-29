@@ -25,6 +25,7 @@ async def go(args):
         result = await plaato.get_data(session, device_type)
         print(f"Device type: {result.device_type}")
         print(f"Name: {result.name}")
+        print(f"Firmware: {result.firmware_version}")
         print(f"Date: {datetime.fromtimestamp(result.date).strftime('%x')}")
         print("Sensors:")
         for key, attr in result.sensors.items():
