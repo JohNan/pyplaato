@@ -1,8 +1,8 @@
 from enum import Enum
 
-from pyplaato.const import UNIT_PERCENTAGE, UNIT_BUBBLES_PER_MINUTE
-from pyplaato.models.device import PlaatoDevice, PlaatoDeviceType
-from pyplaato.models.pins import PinsBase
+from ..const import UNIT_PERCENTAGE, UNIT_BUBBLES_PER_MINUTE
+from .device import PlaatoDevice, PlaatoDeviceType
+from .pins import PinsBase
 
 
 class PlaatoAirlock(PlaatoDevice):

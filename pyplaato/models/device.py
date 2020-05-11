@@ -2,7 +2,7 @@ from abc import abstractmethod, ABC
 from datetime import datetime
 from enum import Enum
 
-from pyplaato.models.pins import PinsBase
+from .pins import PinsBase
 
 
 class PlaatoDeviceType(str, Enum):
