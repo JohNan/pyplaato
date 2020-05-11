@@ -16,7 +16,7 @@ class PlaatoAirlock(PlaatoDevice):
         self.volume_unit = attrs.get(self.Pins.VOLUME_UNIT, None)
         self.bubbles = attrs.get(self.Pins.BUBBLES, None)
         self.batch_volume = attrs.get(self.Pins.BATCH_VOLUME, None)
-        self.sg = attrs.get(self.Pins.SG, None)
+        self.__sg = attrs.get(self.Pins.SG, None)
         self.og = attrs.get(self.Pins.OG, None)
         self.__abv = attrs.get(self.Pins.ABV, None)
         self.__co2_volume = attrs.get(self.Pins.CO2_VOLUME, None)
@@ -36,6 +36,11 @@ class PlaatoAirlock(PlaatoDevice):
     def abv(self):
         if self.__abv is not None:
             return round(float(self.__abv), 2)
+
+    @property
+    def sg(self):
+        if self.__sg is not None:
+            return round(float(self.__sg), 3)
 
     @property
     def co2_volume(self):
