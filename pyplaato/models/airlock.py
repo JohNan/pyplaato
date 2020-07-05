@@ -1,6 +1,6 @@
 from enum import Enum
 
-from ..const import UNIT_PERCENTAGE, UNIT_BUBBLES_PER_MINUTE
+from ..const import *
 from .device import PlaatoDevice, PlaatoDeviceType
 from .pins import PinsBase
 
@@ -26,6 +26,22 @@ class PlaatoAirlock(PlaatoDevice):
         return (f"{self.__class__.__name__} -> "
                 f"BMP: {self.bmp}, "
                 f"Temp: {self.temperature}")
+
+    @classmethod
+    def from_web_hook(cls, data):
+        attrs = {
+            PlaatoAirlock.Pins.BPM: data.get(ATTR_BPM, None),
+            PlaatoAirlock.Pins.TEMPERATURE_UNIT: data.get(ATTR_TEMP_UNIT,None),
+            PlaatoAirlock.Pins.VOLUME_UNIT: data.get(ATTR_VOLUME_UNIT,None),
+            PlaatoAirlock.Pins.BUBBLES: data.get(ATTR_BUBBLES, None),
+            PlaatoAirlock.Pins.BATCH_VOLUME: data.get(ATTR_BATCH_VOLUME,None),
+            PlaatoAirlock.Pins.SG: data.get(ATTR_SG, None),
+            PlaatoAirlock.Pins.OG: data.get(ATTR_OG, None),
+            PlaatoAirlock.Pins.ABV: data.get(ATTR_ABV, None),
+            PlaatoAirlock.Pins.CO2_VOLUME: data.get(ATTR_CO2_VOLUME,None),
+            PlaatoAirlock.Pins.TEMPERATURE: data.get(ATTR_TEMP, None)
+        }
+        return PlaatoAirlock(attrs)
 
     @property
     def temperature(self):

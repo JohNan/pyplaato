@@ -41,7 +41,7 @@ class PlaatoKeg(PlaatoDevice):
 
     @property
     def date(self) -> float:
-        if self.__date is not None:
+        if self.__date is not None and not self.__date:
             date = dateutil.parser.parse(self.__date)
             return datetime.timestamp(date)
         return super().date
@@ -80,7 +80,7 @@ class PlaatoKeg(PlaatoDevice):
 
     @property
     def abv(self):
-        if self.__abv is not None:
+        if self.__abv is not None and not self.__abv:
             return round(float(self.__abv), 2)
 
     @property
