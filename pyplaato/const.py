@@ -4,7 +4,11 @@ URL = "http://plaato.blynk.cc/{auth_token}/get"
 UNIT_TEMP_CELSIUS = "°C"
 UNIT_TEMP_FAHRENHEIT = "°F"
 UNIT_PERCENTAGE = "%"
+UNIT_OZ = "oz"
+UNIT_ML = "ml"
 UNIT_BUBBLES_PER_MINUTE = "bpm"
+
+METRIC = "1"
 
 # Webhook attributes
 ATTR_DEVICE_ID = "device_id"

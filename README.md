@@ -34,9 +34,16 @@ optional arguments:
     TEMPERATURE = "v56"
     UNIT_TYPE = "v71"
     MEASURE_UNIT = "v75"
+    MASS_UNIT = "v73"
     VOLUME_UNIT = "v82"
     LAST_POUR = "v59"
     DATE = "v67"
+    OG = "v65"
+    FG = "v66"
+    ABV = "v68"
+    FIRMWARE_VERSION = "v93"
+    LEAK_DETECTION = "v83"
+    MODE = "v88"
 ```
 
 ### AirLock
@@ -46,7 +53,7 @@ optional arguments:
     BATCH_VOLUME = "v104"
     OG = "v105"
     SG = "v106"
-    ABV = "107"
+    ABV = "v107"
     TEMPERATURE_UNIT = "v108"
     VOLUME_UNIT = "v109"
     BUBBLES = "v110"

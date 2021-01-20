@@ -5,7 +5,8 @@ import dateutil.parser
 
 from .device import PlaatoDevice, PlaatoDeviceType
 from .pins import PinsBase
-from ..const import UNIT_TEMP_CELSIUS, UNIT_TEMP_FAHRENHEIT, UNIT_PERCENTAGE
+from ..const import UNIT_TEMP_CELSIUS, UNIT_TEMP_FAHRENHEIT, UNIT_PERCENTAGE, \
+    METRIC, UNIT_OZ, UNIT_ML
 
 
 class PlaatoKeg(PlaatoDevice):
@@ -29,7 +30,7 @@ class PlaatoKeg(PlaatoDevice):
         self.__pouring = attrs.get(self.Pins.POURING, False)
         self.__beer_left = attrs.get(self.Pins.BEER_LEFT, None)
         self.__temperature = attrs.get(self.Pins.TEMPERATURE, None)
-        self.__temperature_unit = attrs.get(self.Pins.TEMPERATURE_UNIT, None)
+        self.__unit_type = attrs.get(self.Pins.UNIT_TYPE, None)
         self.__last_pour = attrs.get(self.Pins.LAST_POUR, None)
         self.__date = attrs.get(self.Pins.DATE, None)
 
@@ -53,7 +54,7 @@ class PlaatoKeg(PlaatoDevice):
 
     @property
     def temperature_unit(self):
-        if self.__temperature_unit is "1":
+        if self.__unit_type == METRIC:
             return UNIT_TEMP_CELSIUS
         return UNIT_TEMP_FAHRENHEIT
 
@@ -74,9 +75,9 @@ class PlaatoKeg(PlaatoDevice):
 
     @property
     def last_pour_unit(self):
-        if self.measure_unit is "1":
-            return self.mass_unit
-        return self.volume_unit
+        if self.__unit_type == METRIC:
+            return UNIT_ML
+        return UNIT_OZ
 
     @property
     def abv(self):
@@ -90,7 +91,7 @@ class PlaatoKeg(PlaatoDevice):
         255 = Pouring
         :return: True if 255 = Pouring else False
         """
-        return self.__pouring is "255"
+        return self.__pouring == "255"
 
     @property
     def leak_detection(self):
@@ -99,7 +100,7 @@ class PlaatoKeg(PlaatoDevice):
         0 = Not Leaking
         :return: True if 1 = Leaking else False
         """
-        return self.__leak_detection is "1"
+        return self.__leak_detection == "1"
 
     @property
     def mode(self):
@@ -107,7 +108,7 @@ class PlaatoKeg(PlaatoDevice):
         1 = Beer
         2 = Co2
         """
-        return "Beer" if self.__mode is "1" else "Co2"
+        return "Beer" if self.__mode == "1" else "Co2"
 
     @property
     def name(self) -> str:
@@ -185,7 +186,7 @@ class PlaatoKeg(PlaatoDevice):
         BEER_LEFT = "v51"
         BEER_LEFT_UNIT = "v74"
         TEMPERATURE = "v56"
-        TEMPERATURE_UNIT = "v71"
+        UNIT_TYPE = "v71"
         MEASURE_UNIT = "v75"
         MASS_UNIT = "v73"
         VOLUME_UNIT = "v82"

@@ -46,7 +46,10 @@ class PlaatoAirlock(PlaatoDevice):
     @property
     def temperature(self):
         if self.__temperature is not None:
-            return round(float(self.__temperature), 1)
+            try:
+                return round(float(self.__temperature), 1)
+            except ValueError:
+                return self.__temperature
 
     @property
     def abv(self):

@@ -44,7 +44,7 @@ class Plaato(object):
         errors = Plaato._get_errors_as_string(result)
         if errors:
             logging.getLogger(__name__) \
-                .error(f"Failed to get values for {errors}")
+                .warning(f"Failed to get value for {errors}")
 
         return PlaatoKeg(result)
 
@@ -57,7 +57,7 @@ class Plaato(object):
         errors = Plaato._get_errors_as_string(result)
         if errors:
             logging.getLogger(__name__) \
-                .error(f"Failed to get values for {errors}")
+                .warning(f"Failed to get value for {errors}")
 
         return PlaatoAirlock(result)
 
@@ -81,7 +81,7 @@ class Plaato(object):
 
             except JSONDecodeError as e:
                 logging.getLogger(__name__)\
-                    .error(f"Failed to decode json for pin {pin} - {e.msg}")
+                    .warning(f"Failed to decode json for pin {pin} - {e.msg}")
             return result
 
     @staticmethod
