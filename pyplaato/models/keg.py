@@ -36,15 +36,15 @@ class PlaatoKeg(PlaatoDevice):
 
     def __repr__(self):
         return f"{self.__class__.__name__} -> " \
-               f"Bear Left: {self.beer_left}, " \
+               f"Beer Left: {self.beer_left}, " \
                f"Temp: {self.temperature}, " \
                f"Pouring: {self.pouring}"
 
     @property
     def date(self) -> float:
-        if self.__date is not None and not self.__date:
+        if self.__date is not None and self.__date:
             date = dateutil.parser.parse(self.__date)
-            return datetime.timestamp(date)
+            return date.timestamp()
         return super().date
 
     @property
