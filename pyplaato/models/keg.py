@@ -42,7 +42,7 @@ class PlaatoKeg(PlaatoDevice):
 
     @property
     def date(self) -> float:
-        if self.__date is not None and self.__date:
+        if self.__date is not None and self.__date and not self.__date.isspace():
             date = dateutil.parser.parse(self.__date)
             return date.timestamp()
         return super().date
