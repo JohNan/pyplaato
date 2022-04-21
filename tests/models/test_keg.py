@@ -1,13 +1,19 @@
+import os, time
 from datetime import datetime
 from unittest import mock
 
 from pyplaato.models.keg import PlaatoKeg
 
 
+def setup_module(module):
+    os.environ['TZ'] = 'Europe/London'
+    time.tzset()
+
+
 def test_date_prop_with_value_returns_its_timestamp():
     pins = PlaatoKeg.Pins
     keg = PlaatoKeg({pins.DATE: "10/1/2022"})
-    assert 1664575200.0 == keg.date
+    assert 1664578800.0 == keg.date
 
 
 @mock.patch("pyplaato.models.device.datetime")
