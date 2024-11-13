@@ -6,7 +6,7 @@ import dateutil.parser
 from .device import PlaatoDevice, PlaatoDeviceType
 from .pins import PinsBase
 from ..const import UNIT_TEMP_CELSIUS, UNIT_TEMP_FAHRENHEIT, UNIT_PERCENTAGE, \
-    METRIC, UNIT_OZ, UNIT_ML
+    METRIC, UNIT_OZ, UNIT_LITRE
 
 
 class PlaatoKeg(PlaatoDevice):
@@ -76,7 +76,7 @@ class PlaatoKeg(PlaatoDevice):
     @property
     def last_pour_unit(self):
         if self.__unit_type == METRIC:
-            return UNIT_ML
+            return UNIT_LITRE
         return UNIT_OZ
 
     @property
